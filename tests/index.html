@@ -3,8 +3,21 @@
         <meta charset="utf-8">
         <title>Mocha tests</title>
         <link rel="stylesheet" href="../node_modules/mocha/mocha.css">
+        <style type="text/css">
+            #game-board {
+                width: 200px;
+                height: 200px;
+            }
+            button {
+                width: 20px;
+                height: 20px;
+                margin: 0;
+                padding: 0;
+            }
+        </style>
     </head>
     <body>
+        <div id="sandbox"></div>
         <div id="mocha"></div>
         <script src="../node_modules/mocha/mocha.js"></script>
         <script>mocha.setup('tdd')</script>
