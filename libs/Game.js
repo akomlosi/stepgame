@@ -30,12 +30,14 @@ module.exports = Backbone.View.extend({
 	 getBoardEl: function() {
 		if (!this._isBoardExists) {
 			this.$el.append(
+				'<div id="counter_block">Start the game by clicking on a field!</div>' +
 				'<div id="game-board">' +
 				this._createFields() +
 				'</div>'
 			);
 			this._isBoardExists = true;
 		}
+		this._timeCounterBlockEl = $('#counter_block');
 		return $('#game-board');
 	 },
 
@@ -60,20 +62,25 @@ module.exports = Backbone.View.extend({
 	 *
 	 */
 	 onFieldClick: function(ev) {
+		this._startGameTimer();
 		var target = this.$(ev.currentTarget);
-		if (target.attr('data-clicked') === 'true') {
+		if (target.attr('data-clicked') === 'true' || !this.isGameInProgress()) {
 			return;
 		}
 		if (!this.getLastClickedEl()) {
 			target.attr('data-clicked', true);
 			this._displayStep(target);
 			this._counter = this._counter + 1;
+			target.addClass('active');
 			this._lastClickedEl = target;
+			target
 		}
 		else if (this._isValidField(target)) {
 			target.attr('data-clicked', true);
 			this._displayStep(target);
 			this._counter = this._counter + 1;
+			this.getLastClickedEl().removeClass('active');
+			target.addClass('active');
 			this._lastClickedEl = target;
 		}
 		if (this._getPossibleFieldsAround(target).length == 0) {
@@ -124,7 +131,7 @@ module.exports = Backbone.View.extend({
 				possibleFieldEl.attr('data-clicked') === 'false'
 			) {
 				possibleFieldEl.addClass('hilit');
-				return possibleFieldEl.attr('data-number');
+				return num.toString();
 			}
 		}, this));
 		var twoRowsArray = _.map(this._twoRowsDistanceCounters, _.bind(function(i) {
@@ -135,7 +142,7 @@ module.exports = Backbone.View.extend({
 				possibleFieldEl.attr('data-clicked') === 'false'
 			) {
 				possibleFieldEl.addClass('hilit');
-				return possibleFieldEl.attr('data-number');
+				return num.toString();
 			}
 		}, this));
 		return _.compact(oneRowArray.concat(twoRowsArray));
@@ -193,9 +200,33 @@ module.exports = Backbone.View.extend({
 
 	_endGame: function() {
 		this._isGameInProgress = false;
+		this.getBoardEl().addClass('end-game');
+		clearInterval(this._gameTimeCounter);
+		this._timeCounterBlockEl.html('End Game. Your score: ' + this.getCounterState());
 	},
 
 	isGameInProgress : function() {
 		return this._isGameInProgress;
+	},
+
+	/**
+	 *
+	 */
+	_startGameTimer: function() {
+		if (!this._gameTimeout) {
+			this._gameTimeout = setTimeout(_.bind(function() {
+				this._endGame();
+			}, this), 60* 1000);
+		}
+		this._startGameTimeCounter();
+	 },
+
+	_startGameTimeCounter : function() {
+		if (!this._gameTimeCounter) {
+			this._timeCounter = 59;
+			this._gameTimeCounter = setInterval(_.bind(function() {
+				this._timeCounterBlockEl.html(this._timeCounter-- + ' seconds left!');
+			}, this), 1000);
+		}
 	}
 });

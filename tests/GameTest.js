@@ -10,15 +10,24 @@ suite('Test game', function() {
 	setup(function() {
 		this.sandbox = sinon.sandbox.create();
 		this.sandbox.spy(GameView.prototype, 'onFieldClick');
+		this.clock = sinon.useFakeTimers();
 		this.game = new GameView({
 			el: $('#sandbox')
 		});
 		this.stepIterationDataProvider = function() {
-			return [
-				1, 22, 41, 62, 81, 93, 72, 51, 32, 11, 23, 31, 52,
-				71, 92, 73, 61, 53, 34, 13, 21, 33, 12, 4, 25, 6,
-				14, 2
-			];
+			return [ 12, 33, 14, 22, 34, 13, 1 ];
+		};
+
+		this.gameBoard = $('#game-board');
+
+		this.getTestButton = function(num) {
+			return this.gameBoard.find('button[data-number="' + num + '"]');
+		};
+
+		this.clickTestButton = function(num) {
+			var testButton = this.getTestButton(num);
+			testButton.click();
+			return testButton;
 		}
 	});
 	teardown(function() {
@@ -26,6 +35,7 @@ suite('Test game', function() {
 		this.game.undelegateEvents();
 		$('#sandbox').html('');
 		delete this.game;
+		this.clock.restore();
 	});
 
 	test('Game instance test', function() {
@@ -45,7 +55,7 @@ suite('Test game', function() {
 	});
 
 	test('board elements are clickable', function() {
-		this.game.getBoardEl().find('button')[0].click();
+		this.clickTestButton(1);
 		assert.isTrue(this.game.onFieldClick.calledOnce);
 	});
 
@@ -58,73 +68,78 @@ suite('Test game', function() {
 	});
 
 	test('can retrieve with the last clicked element', function() {
-		var testButton = this.game.getBoardEl().find('button[data-number="10"]');
-		testButton.click();
+		var testButton = this.clickTestButton(10);
 		assert.strictEqual(testButton.attr('data-number'), this.game.getLastClickedEl().attr('data-number'));
-		//testButton = $('#game-board').find('button[data-number="29"]');
-		//testButton.click();
-		//assert.strictEqual(testButton.attr('data-number'), this.game.getLastClickedEl().attr('data-number'));
-		//testButton = $('#game-board').find('button[data-number="30"]');
-		//testButton.click();
-		//assert.strictEqual(this.game.getLastClickedEl().attr('data-number'), 29);
-		//var testButton = $('#game-board').find('button[data-number="8"]');
-		//testButton.click();
-		//assert.strictEqual(testButton.attr('data-number'), this.game.getLastClickedEl().attr('data-number'));
 	});
 
 	test('buttons can be selected by data-number value', function() {
-		var board = $('#game-board');
-		assert.strictEqual(board.find('button[data-number="10"]').length, 1);
-		assert.strictEqual(board.find('button[data-number="100"]').length, 1);
-		assert.strictEqual(board.find('button[data-number="101"]').length, 0);
+		assert.strictEqual(this.getTestButton(10).length, 1);
+		assert.strictEqual(this.getTestButton(100).length, 1);
+		assert.strictEqual(this.getTestButton(101).length, 0);
 	});
 
 	test('increases counters when clicked', function() {
-		var buttonList = $('#game-board').find('button');
 		assert.strictEqual(this.game.getCounterState(), 1);
-		buttonList[0].click();
+		this.getTestButton(1).click();
 		assert.strictEqual(this.game.getCounterState(), 2);
 	});
 
 	test('clicked field gets marked', function() {
-		var field = $(this.game.getBoardEl().find('button')[0]);
+		var field = this.getTestButton(1);
 		assert.isFalse(field.attr('data-clicked') == 'true');
 		field.click();
 		assert.isTrue(field.attr('data-clicked') == 'true');
 	});
 
 	test('clicked field cannot be clicked again', function() {
-		var field = $(this.game.getBoardEl().find('button')[0]);
-		field.click();
+		this.clickTestButton(1);
 		assert.strictEqual(this.game.getCounterState(), 2);
-		field.click();
+		this.clickTestButton(1);
 		assert.strictEqual(this.game.getCounterState(), 2);
 	});
 
 	test('just valid fields are clickable', function() {
-		var board = $('#game-board');
-		board.find('button[data-number="1"]').click();
+		this.clickTestButton(1);
 		assert.strictEqual(this.game.getCounterState(), 2);
-		board.find('button[data-number="2"]').click();
+		this.clickTestButton(2);
 		assert.strictEqual(this.game.getCounterState(), 2);
-		board.find('button[data-number="100"]').click();
+		this.clickTestButton(100);
 		assert.strictEqual(this.game.getCounterState(), 2);
-		board.find('button[data-number="13"]').click();
+		this.clickTestButton(13);
 		assert.strictEqual(this.game.getCounterState(), 3);
 	});
 
 	test('correct step displayed by number', function() {
-		var testButton = $('#game-board').find('button[data-number="1"]');
-		testButton.click();
+		var testButton = this.clickTestButton(1);
 		assert.strictEqual(testButton.html(), '1');
 	});
 
+	test('last step marked as current field', function() {
+		var testButton1 = this.clickTestButton(1);
+		assert.isTrue(testButton1.hasClass('active'));
+		var testButton2 = this.clickTestButton(13);
+		assert.isFalse(testButton1.hasClass('active'));
+		assert.isTrue(testButton2.hasClass('active'));
+	});
+
 	test('game ends if there is no more step', function() {
-		var board = $('#game-board'),
-			steps = this.stepIterationDataProvider();
-		for (var i = 0; i < steps.length; i++) {
-			board.find('button[data-number="' + steps[i] + '"]').click();
+		var steps = this.stepIterationDataProvider(), len = steps.length;
+		for (var i = 0; i < len; i++) {
+			this.clickTestButton(steps[i]);
 		}
 		assert.isFalse(this.game.isGameInProgress());
+	});
+
+	test('game ends after 60 seconds from the first click', function() {
+		this.clickTestButton(1);
+		assert.isTrue(this.game.isGameInProgress());
+		this.clock.tick(60 * 1000);
+		assert.isFalse(this.game.isGameInProgress());
+	});
+
+	test('after timeout the board becomes inactive', function() {
+		this.clickTestButton(1);
+		this.clock.tick(60 * 1000);
+		assert.isFalse(this.clickTestButton(13).attr('data-clicked') == 'true');
 	});
 });

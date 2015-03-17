@@ -1,0 +1,37 @@
+#game-board {
+	width: 200px;
+	height: 200px;
+	transition: 1s;
+	p.row {
+		padding: 0;
+		margin: 0;
+		height: 20px;
+	}
+	button {
+		width: 20px;
+		height: 20px;
+		margin: 0;
+		padding: 0;
+		box-sizing: border-box;
+		border: 1px solid;
+		background: none;
+		&[data-clicked=true]{
+			background: lawngreen;
+			padding: 0;
+			margin: 0;
+			font-size: 10px;
+			line-height: 19px;
+			position: relative;
+			top: -5px;
+			transition: 0.5s;
+		}
+		&.active {
+			background: orange;
+			transition: 0.5s;
+		}
+	}
+	&.end-game {
+		opacity: .1;
+		transition: .3s;
+	}
+}

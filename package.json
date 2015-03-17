@@ -10,6 +10,7 @@
     "jscs": "node_modules\\.bin\\jscs -c .jscsrc libs tests",
     "jsdoc": "node_modules\\.bin\\jsdoc -c .jsdocrc libs",
     "bundle": "node load_all_test_files.js && node_modules\\.bin\\browserify -o bundle.js all_test_file.js",
+    "build": "npm run bundle && browserify app.js -o build.js",
     "all": "npm run jshint && npm run jscs && npm run coverage && npm run jsdoc"
   },
   "author": "",
